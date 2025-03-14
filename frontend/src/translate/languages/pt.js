@@ -287,6 +287,9 @@ const messages = {
         },
         success: "Contato salvo com sucesso.",
       },
+      flowbuilderModal: {
+        flowNotIdPhrase: "Fluxo padrão",
+      },
       queueModal: {
         title: {
           add: "Adicionar fila",

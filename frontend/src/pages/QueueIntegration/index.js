@@ -5,6 +5,7 @@ import n8n from "../../assets/n8n.png";
 import dialogflow from "../../assets/dialogflow.png";
 import webhooks from "../../assets/webhook.png";
 import typebot from "../../assets/typebot.jpg";
+import flowbuilder from "../../assets/flowbuilders.png"
 
 import { makeStyles } from "@material-ui/core/styles";
 
@@ -295,6 +296,8 @@ const QueueIntegration = () => {
                       src={webhooks} className={classes.avatar} />)}
                     {integration.type === "typebot" && (<Avatar
                       src={typebot} className={classes.avatar} />)}
+                    {integration.type === "flowbuilder" && (<Avatar
+                      src={flowbuilder} className={classes.avatar} />)}
                   </TableCell>
 
                   <TableCell align="center">{integration.id}</TableCell>

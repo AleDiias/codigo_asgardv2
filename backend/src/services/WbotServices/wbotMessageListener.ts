@@ -32,6 +32,9 @@ import { Store } from "../../libs/store";
 import TicketTraking from "../../models/TicketTraking";
 import UserRating from "../../models/UserRating";
 import SendWhatsAppMessage from "./SendWhatsAppMessage";
+import { FlowBuilderModel } from "../../models/FlowBuilder";
+import { FlowDefaultModel } from "../../models/FlowDefault";
+import { FlowCampaignModel } from "../../models/FlowCampaign";
 import moment from "moment";
 import Queue from "../../models/Queue";
 import QueueOption from "../../models/QueueOption";
@@ -2150,6 +2153,7 @@ const handleMessage = async (
   }
 };
 
+
 const handleMsgAck = async (
   msg: WAMessage,
   chat: number | null | undefined
@@ -2218,6 +2222,153 @@ const verifyRecentCampaign = async (
     }
   }
 };
+
+const flowbuilderIntegration = async (
+  msg: proto.IWebMessageInfo,
+  wbot: Session,
+  companyId: number,
+  queueIntegration: QueueIntegrations,
+  ticket: Ticket,
+  contact: Contact,
+  isFirstMsg?: Ticket,
+  isTranfered?: boolean
+) => {
+
+  const io = getIO();
+  const quotedMsg = await verifyQuotedMessage(msg);
+  const body = getBodyMessage(msg);
+
+  /*
+  const messageData = {
+    wid: msg.key.id,
+    ticketId: ticket.id,
+    contactId: msg.key.fromMe ? undefined : contact.id,
+    body: body,
+    fromMe: msg.key.fromMe,
+    read: msg.key.fromMe,
+    quotedMsgId: quotedMsg?.id,
+    ack: Number(String(msg.status).replace('PENDING', '2').replace('NaN', '1')) || 2,
+    remoteJid: msg.key.remoteJid,
+    participant: msg.key.participant,
+    dataJson: JSON.stringify(msg),
+    createdAt: new Date(
+      Math.floor(getTimestampMessage(msg.messageTimestamp) * 1000)
+    ).toISOString(),
+    ticketImported: ticket.imported,
+  };
+
+
+  await CreateMessageService({ messageData, companyId: ticket.companyId });
+
+  */
+
+
+  if (!msg.key.fromMe && ticket.status === "closed") {
+    console.log("===== CHANGE =====")
+    await ticket.update({ status: "pending" });
+    await ticket.reload({
+      include: [
+        { model: Queue, as: "queue" },
+        { model: User, as: "user" },
+        { model: Contact, as: "contact" }
+      ]
+    });
+    await UpdateTicketService({
+      ticketData: { status: "pending", integrationId: ticket.integrationId },
+      ticketId: ticket.id,
+      companyId
+    });
+
+    io.of(String(companyId))
+      .emit(`company-${companyId}-ticket`, {
+        action: "delete",
+        ticket,
+        ticketId: ticket.id
+      });
+
+    io.to(ticket.status)
+      .emit(`company-${companyId}-ticket`, {
+        action: "update",
+        ticket,
+        ticketId: ticket.id
+      });
+  }
+
+  if (msg.key.fromMe) {
+    return;
+  }
+
+  const whatsapp = await ShowWhatsAppService(wbot.id!, companyId);
+
+
+  const listPhrase = await FlowCampaignModel.findAll({
+    where: {
+      companyId: ticket.companyId,
+      whatsappId: whatsapp.id
+    }
+  });
+
+  if (
+    !isFirstMsg &&
+    listPhrase.filter(item => item.phrase === body).length === 0
+  ) {
+
+    const flow = await FlowBuilderModel.findOne({
+      where: {
+        id: whatsapp.flowIdWelcome
+      }
+    });
+    if (flow) {
+
+      const nodes: INodes[] = flow.flow["nodes"];
+      const connections: IConnections[] = flow.flow["connections"];
+
+      const mountDataContact = {
+        number: contact.number,
+        name: contact.name,
+        email: contact.email
+      };
+
+      // const worker = new Worker("./src/services/WebhookService/WorkerAction.ts");
+
+
+      // // Enviar as variáveis como parte da mensagem para o Worker
+      // console.log('DISPARO1')
+      // const data = {
+      //   idFlowDb: flowUse.flowIdWelcome,
+      //   companyId: ticketUpdate.companyId,
+      //   nodes: nodes,
+      //   connects: connections,
+      //   nextStage: flow.flow["nodes"][0].id,
+      //   dataWebhook: null,
+      //   details: "",
+      //   hashWebhookId: "",
+      //   pressKey: null,
+      //   idTicket: ticketUpdate.id,
+      //   numberPhrase: mountDataContact
+      // };
+      // worker.postMessage(data);
+      // worker.on("message", message => {
+      //   console.log(`Mensagem do worker: ${message}`);
+      // });
+
+      await ActionsWebhookService(
+        whatsapp.id,
+        whatsapp.flowIdWelcome,
+        ticket.companyId,
+        nodes,
+        connections,
+        flow.flow["nodes"][0].id,
+        null,
+        "",
+        "",
+        null,
+        ticket.id,
+        mountDataContact
+      );
+
+    }
+  };
 
 const verifyCampaignMessageAndCloseTicket = async (
   message: proto.IWebMessageInfo,

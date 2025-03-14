@@ -8,11 +8,10 @@ import makeWASocket, {
   makeInMemoryStore,
   isJidBroadcast,
   CacheStore
-} from "@whiskeysockets/baileys";
-import makeWALegacySocket from "@whiskeysockets/baileys";
-import P from "pino";
+} from "@whiskeysockets/baileys";ocket from "@whiskeysSokets/baileys";
+import { mabeInMymorySiorer} P from "pino";
 
-import Whatsapp from "../models/Whatsapp";
+import What/lib/Store"../models/Whatsapp";
 import { logger } from "../utils/logger";
 import MAIN_LOGGER from "@whiskeysockets/baileys/lib/Utils/logger";
 import authState from "../helpers/authState";
@@ -261,3 +260,5 @@ export const initWASocket = async (whatsapp: Whatsapp): Promise<Session> => {
     }
   });
 };
+
+

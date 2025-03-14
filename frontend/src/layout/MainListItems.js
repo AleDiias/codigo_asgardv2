@@ -238,6 +238,10 @@ const MainListItems = (props) => {
     }
   }, [chats, user.id]);
 
+  const isFlowbuilderRouteActive = 
+    location.pathname.startsWith("/phrase-lists")
+    location.pathname.startsWith("/flowbuilders")
+
   useEffect(() => {
     if (localStorage.getItem("cshow")) {
       setShowCampaigns(true);
@@ -429,6 +433,66 @@ const MainListItems = (props) => {
                 </Collapse>
               </>
             )}
+{/* FLOWBUILDER */}
+<Can
+              role={user.profile}
+              perform="dashboard:view"
+              yes={() => (
+                <>
+                  <Tooltip title={collapsed ? i18n.t("mainDrawer.listItems.campaigns") : ""} placement="right">
+                    <ListItem
+                      dense
+                      button
+                      onClick={() => setOpenFlowSubmenu((prev) => !prev)}
+                      onMouseEnter={() => setFlowHover(true)}
+                      onMouseLeave={() => setFlowHover(false)}
+                    >
+                      <ListItemIcon>
+                        <Avatar
+                          className={`${classes.iconHoverActive} ${isFlowbuilderRouteActive || flowHover ? "active" : ""
+                            }`}
+                        >
+                          <Webhook />
+                        </Avatar>
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={
+                          <Typography className={classes.listItemText}>
+                            {i18n.t("Flowbuilder")}
+                          </Typography>
+                        }
+                      />
+                      {openFlowSubmenu ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                    </ListItem>
+                  </Tooltip>
+
+                  <Collapse
+                    in={openFlowSubmenu}
+                    timeout="auto"
+                    unmountOnExit
+                    style={{
+                      backgroundColor: theme.mode === "light" ? "rgba(120,120,120,0.1)" : "rgba(120,120,120,0.5)",
+                    }}
+                  >
+                    <List dense component="div" disablePadding>
+                      <ListItemLink
+                        to="/phrase-lists"
+                        primary={"Fluxo de Campanha"}
+                        icon={<EventAvailableIcon />}
+                        tooltip={collapsed}
+                      />
+
+                      <ListItemLink
+                        to="/flowbuilders"
+                        primary={'Fluxo de conversa'}
+                        icon={<ShapeLine />}
+                      />
+                    </List>
+                  </Collapse>
+                </>
+              )}
+            />
+
             {user.super && (
               <ListItemLink
                 to="/announcements"
